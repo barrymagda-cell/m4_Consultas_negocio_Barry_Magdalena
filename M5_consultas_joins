@@ -1,0 +1,53 @@
+USE Ventas_Tech_DB
+;
+
+
+--CONSULTA 1 
+
+SELECT v.fecha_venta, v.id_cliente, c.nombre AS nombre_cliente, c.ciudad,
+       p.nombre_producto, cat.nombre_categoria AS categoria,
+       v.cantidad, v.precio_unitario,
+       v.cantidad * v.precio_unitario AS total_venta
+FROM ventas AS v
+INNER JOIN clientes   AS c   ON v.id_cliente   = c.id_cliente
+INNER JOIN productos  AS p   ON v.id_producto  = p.id_producto
+INNER JOIN categorias AS cat ON p.id_categoria = cat.id_categoria
+ORDER BY v.fecha_venta;
+
+
+-- CONSULTA 2
+SELECT c.nombre, c.email, c.fecha_registro
+FROM clientes as c 
+LEFT JOIN ventas AS v   ON c.id_cliente = v.id_cliente
+WHERE v.id_venta IS NULL
+-- Hallazgo: Ninguno de los 5 clientes quedaron sin comprar.
+
+
+--CONSULTA 3
+SELECT p.nombre_producto, p.id_categoria, p.precio
+FROM productos as p
+LEFT JOIN ventas as v  ON p.id_producto = v.id_producto
+WHERE v.id_venta IS NULL
+-- Hallazgo: El 100% de los prodcutos generaron ventas, 
+
+
+--CONSULTA 4 
+SELECT
+    canal,
+    SUM(total)                              AS total_canal
+FROM (
+    SELECT v.fecha_venta, v.cantidad * v.precio_unitario AS total, 'Buenos Aires' AS canal
+    FROM ventas AS v
+    INNER JOIN clientes AS c ON v.id_cliente = c.id_cliente
+    WHERE c.ciudad = 'Buenos Aires'
+
+    UNION ALL
+
+    SELECT v.fecha_venta, v.cantidad * v.precio_unitario AS total, 'Interior' AS canal
+    FROM ventas AS v
+    INNER JOIN clientes AS c ON v.id_cliente = c.id_cliente
+    WHERE c.ciudad <> 'Buenos Aires'
+) AS consolidado
+GROUP BY canal;
+-- Hallazgo: Buenos Aires hizo solo 2 de las 10 ventas pero aporta el 41% de la facturacion ($2640);
+-- el Interior suma $3804 con 8 ventas, o sea que compra mas veces pero por montos mas chicos.
